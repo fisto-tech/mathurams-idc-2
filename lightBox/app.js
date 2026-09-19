@@ -42,8 +42,10 @@ let userColorsChanged = {
   mattress: false,
   absPanel: false,
   absRail: false,
+  ssPanel: false,
   storage: false
 };
+let ssPanelOriginalColorHex = null; // Stores original GLB material color for SS panel restore
 let currentModelName = '';
 let currentModelUrl = '';
 let isCurrentModelViewOnly = false;
@@ -150,8 +152,10 @@ function loadModel(fileOrUrl, fileName) {
     mattress: false,
     absPanel: false,
     absRail: false,
+    ssPanel: false,
     storage: false
   };
+  ssPanelOriginalColorHex = null; // Reset captured original on new model load
 
   // Set initial camera configuration based on model name
   const lowerName2 = name.toLowerCase();
@@ -324,6 +328,14 @@ modelViewer.addEventListener('load', () => {
         if (matName.startsWith('cot_base') && mat.color) {
           mat.color.setHex(0xFFFCEF);
           mat.needsUpdate = true;
+        }
+        // Capture original SS panel color from the GLB on first encounter
+        if (ssPanelOriginalColorHex === null &&
+            (matName.includes('ss_pannel') || matName.includes('ss_pannelhead')) && mat.color) {
+          const r = Math.round(mat.color.r * 255);
+          const g = Math.round(mat.color.g * 255);
+          const b = Math.round(mat.color.b * 255);
+          ssPanelOriginalColorHex = '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
         }
       });
     }
@@ -1235,6 +1247,16 @@ function applyCurrentConfig() {
     absPanelColorSection.style.display = isAbsPanelSelected ? 'flex' : 'none';
   }
 
+  // SS Panel color section: for ICU Cot & Fowler Cot when SS head & foot panel is selected
+  const isSsPanelModel = productName === 'ICU Cot' || productName === 'Fowler Cot' ||
+    (currentModelName && (currentModelName.toLowerCase().includes('icu') ||
+      (currentModelName.toLowerCase().includes('fowler') && !currentModelName.toLowerCase().includes('semi'))));
+  const isSsPanelSelected = (headfoot === 'ss');
+  const ssPanelColorSection = document.getElementById('ss-panel-color-section');
+  if (ssPanelColorSection) {
+    ssPanelColorSection.style.display = (isSsPanelModel && isSsPanelSelected) ? 'flex' : 'none';
+  }
+
   const isAbsRailSelected = (siderails === 'abs' || siderails === 'abs1' || siderails === 'abs2' || siderails === 'absbutton');
   const absRailColorSection = document.getElementById('abs-rail-color-section');
   if (absRailColorSection) {
@@ -1418,6 +1440,15 @@ function applyCurrentConfig() {
     const activeAbsPanelColor = document.querySelector('.color-swatch.abs-panel-color.active')?.dataset.color;
     if (activeAbsPanelColor) {
       applyAbsPanelColor(activeAbsPanelColor);
+    }
+  }
+  if (isSsPanelModel && isSsPanelSelected) {
+    const activeSsPanelColor = document.querySelector('.color-swatch.ss-panel-color.active')?.dataset.color;
+    if (userColorsChanged.ssPanel && activeSsPanelColor) {
+      applySsPanelColor(activeSsPanelColor);
+    } else if (!userColorsChanged.ssPanel && ssPanelOriginalColorHex) {
+      // Default selected — restore the original GLB material color
+      applySsPanelColor(ssPanelOriginalColorHex);
     }
   }
   if (isAbsRailSelected) {
@@ -1760,6 +1791,84 @@ function applyAbsPanelColor(hexColorStr) {
       }
     });
   }
+}
+
+// SS Panel color — targets the ss_pannelhead&foot material on the ICU Cot SS panel mesh
+function applySsPanelColor(hexColorStr) {
+  const hex = parseInt(hexColorStr.replace('#', ''), 16);
+
+  Object.keys(meshMap).forEach(key => {
+    const entry = meshMap[key];
+    const name = entry.name.toLowerCase();
+
+    // Match the ss head&foot panel mesh group
+    const isSsPanel = (name.includes('ss') || name.includes('s3')) &&
+      (name.includes('head') || name.includes('foot') || name.includes('panel') || name.includes('board') || name.includes('end')) &&
+      !name.includes('abs');
+
+    if (isSsPanel) {
+      entry.meshes.forEach(mesh => {
+        if (!mesh.material) return;
+        const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        materials.forEach(mat => {
+          const matName = (mat.name || '').toLowerCase();
+          // Target the color portion material: ss_pannelhead&foot.001 and similar
+          const isColorPortion = matName.includes('ss_pannel') || matName.includes('ss_pannelhead') ||
+            matName.includes('clrss') || matName.includes('ss_clr') ||
+            (matName.includes('ss') && (matName.includes('clr') || matName.includes('color') || matName.includes('colour')));
+          if (!isColorPortion) return;
+
+          const cloned = mat.clone();
+          if (cloned.color) cloned.color.setHex(hex);
+          if (cloned.emissive) cloned.emissive.setHex(0x000000);
+          cloned.needsUpdate = true;
+          if (Array.isArray(mesh.material)) {
+            const idx = mesh.material.indexOf(mat);
+            if (idx !== -1) mesh.material[idx] = cloned;
+          } else {
+            mesh.material = cloned;
+          }
+        });
+      });
+    }
+  });
+
+  // Direct scene traversal for nested nodes
+  const symbols = Object.getOwnPropertySymbols(modelViewer);
+  const sceneSymbol = symbols.find(s => s.description === 'scene');
+  const internalScene = modelViewer[sceneSymbol];
+  if (internalScene) {
+    internalScene.traverse(child => {
+      if (!child.isMesh || !child.material) return;
+      const nodeName = (child.name || '').toLowerCase();
+      const isSsPanelNode = (nodeName.includes('ss') || nodeName.includes('s3')) &&
+        (nodeName.includes('head') || nodeName.includes('foot') || nodeName.includes('panel') || nodeName.includes('board') || nodeName.includes('end')) &&
+        !nodeName.includes('abs');
+      if (!isSsPanelNode) return;
+
+      const materials = Array.isArray(child.material) ? child.material : [child.material];
+      materials.forEach(mat => {
+        const matName = (mat.name || '').toLowerCase();
+        const isColorPortion = matName.includes('ss_pannel') || matName.includes('ss_pannelhead') ||
+          matName.includes('clrss') || matName.includes('ss_clr') ||
+          (matName.includes('ss') && (matName.includes('clr') || matName.includes('color') || matName.includes('colour')));
+        if (!isColorPortion) return;
+
+        const cloned = mat.clone();
+        if (cloned.color) cloned.color.setHex(hex);
+        if (cloned.emissive) cloned.emissive.setHex(0x000000);
+        cloned.needsUpdate = true;
+        if (Array.isArray(child.material)) {
+          const idx = child.material.indexOf(mat);
+          if (idx !== -1) child.material[idx] = cloned;
+        } else {
+          child.material = cloned;
+        }
+      });
+    });
+  }
+
+  requestRender();
 }
 
 // ABS Rail color
@@ -2175,6 +2284,20 @@ if (absRailCustomPicker && absRailCustomSwatch) {
 }
 
 
+
+// SS Panel color swatches listeners
+document.querySelectorAll('.ss-panel-color').forEach(swatch => {
+  swatch.addEventListener('click', () => {
+    document.querySelectorAll('.ss-panel-color').forEach(s => s.classList.remove('active'));
+    swatch.classList.add('active');
+    if (swatch.dataset.default === 'true') {
+      userColorsChanged.ssPanel = false;
+    } else {
+      userColorsChanged.ssPanel = true;
+    }
+    applyCurrentConfig();
+  });
+});
 
 // == HUD ======================================================================
 document.getElementById('reset-cam-btn').addEventListener('click', () => {
