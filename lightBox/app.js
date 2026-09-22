@@ -119,19 +119,15 @@ function loadModel(fileOrUrl, fileName) {
     titleEl.textContent = productName;
   }
 
-  loadingName.textContent = name;
+  if (loadingName) loadingName.textContent = name;
   loadingEl.classList.add('visible');
   if (initialHint) initialHint.style.display = 'none';
   const sidebarEl = document.getElementById('sidebar-config');
   if (sidebarEl) sidebarEl.classList.add('loading');
 
-  // Classify model type (View-only vs Customisation)
-  const isAttenderModel = name.toLowerCase().includes('attender');
-  const isLockerModel = name.toLowerCase().includes('locker') || name.toLowerCase().includes('sidelocker');
-  const isViewOnly = url.toLowerCase().includes('view-only-models') ||
-    name.toLowerCase().includes('over-bed-table') ||
-    name.toLowerCase().includes('semi-fowler-cot') ||
-    isAttenderModel || isLockerModel;
+  // Classify model type (View-only vs Customisation) 
+  // Sidebar customization is hidden for all models — view-only mode always active
+  const isViewOnly = true;
 
   const appEl = document.getElementById('app');
   if (appEl) {
@@ -2726,6 +2722,11 @@ function initNavigation() {
     // Model Configurator mode
     if (appEl) appEl.classList.remove('homescreen-active');
     if (modelViewer) modelViewer.style.display = 'block';
+
+    // Remove background card preview model-viewer sources to free WebGL memory on mobile
+    document.querySelectorAll('.product-grid model-viewer').forEach(mv => {
+      mv.removeAttribute('src');
+    });
 
     let modelPath = '';
     let nameToSet = '';
