@@ -1345,8 +1345,6 @@
     transform: scale(0.98) translateX(5px);
 }
 
-padding: 0 !important;
-}
 
 html body .zoom-control-container .zoom-btn,
 html body .zoom-control-container .icon-btn {

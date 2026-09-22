@@ -1945,36 +1945,42 @@ function init3dExperienceAnimations() {
     if (!cards.length) return;
 
     let isSequenceRunning = false;
-    let revealTimeout = null;
+    let revealTimeouts = [];
     let pulseInterval = null;
     let currentPulseIndex = 0;
+
+    function clearTimers() {
+        revealTimeouts.forEach(t => clearTimeout(t));
+        revealTimeouts = [];
+        if (pulseInterval) {
+            clearInterval(pulseInterval);
+            pulseInterval = null;
+        }
+    }
 
     function start3dSequence() {
         if (isSequenceRunning) return;
         isSequenceRunning = true;
         clearTimers();
 
-        // Reset state
+        // Step 1: Initial state - smooth scaled down
         cards.forEach(card => {
-            card.classList.remove('pop-active', 'card-pulse-active');
-            card.style.opacity = '0';
+            card.classList.remove('revealed', 'card-pulse-active', 'pop-active', 'threed-card-animate');
         });
 
-        // 1. Staggered popup reveal (160ms delay per card)
+        // Step 2: Smooth one-by-one staggered entrance (130ms delay per card)
         cards.forEach((card, idx) => {
-            setTimeout(() => {
+            const t = setTimeout(() => {
                 if (!isSequenceRunning) return;
-                card.classList.add('pop-active');
-            }, idx * 160);
+                card.classList.add('revealed');
+            }, idx * 130 + 50);
+            revealTimeouts.push(t);
         });
 
-        // 2. One-by-one looping scale animation after reveal completes
-        revealTimeout = setTimeout(() => {
+        // Step 3: Start smooth auto-scale looping pulse after entrance finishes
+        const totalRevealTime = cards.length * 130 + 700;
+        const tLoop = setTimeout(() => {
             if (!isSequenceRunning) return;
-            cards.forEach(card => {
-                card.classList.remove('pop-active');
-                card.style.opacity = '1';
-            });
 
             currentPulseIndex = 0;
 
@@ -1988,21 +1994,17 @@ function init3dExperienceAnimations() {
             }
 
             pulseStep();
-            pulseInterval = setInterval(pulseStep, 1800);
-        }, 2300);
-    }
-
-    function clearTimers() {
-        if (revealTimeout) clearTimeout(revealTimeout);
-        if (pulseInterval) clearInterval(pulseInterval);
+            pulseInterval = setInterval(pulseStep, 1700);
+        }, totalRevealTime);
+        revealTimeouts.push(tLoop);
     }
 
     function stop3dSequence() {
         isSequenceRunning = false;
         clearTimers();
         cards.forEach(card => {
-            card.classList.remove('pop-active', 'card-pulse-active');
-            card.style.opacity = '0';
+            card.classList.remove('card-pulse-active');
+            card.classList.add('revealed');
         });
     }
 
@@ -2010,19 +2012,23 @@ function init3dExperienceAnimations() {
         let isVisible = false;
 
         if (typeof $ !== 'undefined' && $('#flipbook').length && $('#flipbook').turn) {
-            const currentView = $('#flipbook').turn('view');
+            const currentView = $('#flipbook').turn('view') || [];
             const pageNum = $('#flipbook').turn('page');
-            if (pageNum === 4 || pageNum === 5 || (currentView && (currentView.includes(4) || currentView.includes(5)))) {
-                isVisible = true;
+            const isSinglePage = $('#flipbook').turn('display') === 'single' || $(window).width() <= 768;
+
+            if (isSinglePage) {
+                // Mobile single page mode: animate specifically when page 5 is active
+                if (pageNum === 5 || currentView.includes(5)) {
+                    isVisible = true;
+                }
+            } else {
+                // Desktop double page mode: animate when page 4 or 5 is visible
+                if (pageNum === 4 || pageNum === 5 || currentView.includes(4) || currentView.includes(5)) {
+                    isVisible = true;
+                }
             }
         } else {
-            const parentPage = container ? container.closest('.page') : cards[0].closest('.page');
-            if (parentPage) {
-                const rect = parentPage.getBoundingClientRect();
-                isVisible = rect.width > 0 && rect.height > 0 && rect.top < window.innerHeight && rect.bottom > 0;
-            } else {
-                isVisible = true;
-            }
+            isVisible = true;
         }
 
         if (isVisible) {
@@ -2045,6 +2051,101 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init3dExperienceAnimations);
 } else {
     init3dExperienceAnimations();
+}
+
+// ==================== PRODUCT IMAGE LIGHTBOX POPUP MODAL ====================
+function initProductImageModal() {
+    const modal = document.getElementById('product-image-modal');
+    const modalImg = document.getElementById('product-modal-img');
+    const closeBtn = document.getElementById('product-modal-close');
+    if (!modal || !modalImg) return;
+
+    function openPopup(imageSrc) {
+        if (!imageSrc) return;
+        modalImg.src = imageSrc;
+        modal.classList.add('active');
+
+        // Lock/disable flipbook page flipping while modal is open
+        if (typeof $ !== 'undefined' && $('#flipbook').length && $('#flipbook').turn) {
+            try {
+                $('#flipbook').turn('disable', true);
+            } catch (err) {}
+        }
+    }
+
+    function closePopup() {
+        modal.classList.remove('active');
+        setTimeout(() => {
+            if (!modal.classList.contains('active')) {
+                modalImg.src = '';
+            }
+        }, 350);
+
+        // Re-enable flipbook page flipping when modal closes
+        if (typeof $ !== 'undefined' && $('#flipbook').length && $('#flipbook').turn) {
+            try {
+                $('#flipbook').turn('disable', false);
+            } catch (err) {}
+        }
+    }
+
+    // Delegated click handler for any product image clicked
+    document.addEventListener('click', function (e) {
+        const target = e.target;
+        if (!target || target.tagName !== 'IMG') return;
+
+        // Skip non-product images (such as background, icons, 3D experience thumbnails, TOC)
+        const isProductImg =
+            target.id === 'cot-image' ||
+            target.classList.contains('cot-image') ||
+            target.classList.contains('cot-pos1') ||
+            target.classList.contains('cot-pos2') ||
+            target.classList.contains('cot-pos3') ||
+            target.classList.contains('cot-pos4') ||
+            target.classList.contains('cot-pos5') ||
+            target.classList.contains('cot-pos6') ||
+            (target.src &&
+                (target.src.includes('-image.webp') || target.src.includes('-image.png')) &&
+                !target.src.includes('background') &&
+                !target.src.includes('3D-experience') &&
+                !target.src.includes('commonThings') &&
+                !target.src.includes('home-page') &&
+                !target.src.includes('table-of-content'));
+
+        if (isProductImg) {
+            e.preventDefault();
+            e.stopPropagation();
+            openPopup(target.src);
+        }
+    }, true);
+
+    if (closeBtn) {
+        closeBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            closePopup();
+        });
+    }
+
+    modal.addEventListener('click', function (e) {
+        if (e.target === modal || e.target.classList.contains('product-modal-container')) {
+            e.preventDefault();
+            e.stopPropagation();
+            closePopup();
+        }
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+            closePopup();
+        }
+    });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initProductImageModal);
+} else {
+    initProductImageModal();
 }
 
 

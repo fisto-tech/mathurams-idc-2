@@ -3419,44 +3419,38 @@ body.is-fullscreen .ui-arrow-next-page:hover {
 }
 
 /* ==========================================================================
-   3D EXPERIENCE PAGE (PAGE 4/5) CARDS: POPUP REVEAL & LOOPING SCALE
+   3D EXPERIENCE PAGE CARDS: SMOOTH ONE-BY-ONE POPUP REVEAL & LOOPING AUTO-SCALE
    ========================================================================== */
 .exp-3d-card {
   opacity: 0;
-  transition: transform 1.2s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.6s ease !important;
+  transform: scale(0.8) translateY(10px);
+  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease, box-shadow 0.4s ease !important;
   transform-origin: center center;
+  will-change: transform, opacity;
 }
 
-.exp-3d-card:hover {
-  transform: scale(1.14) translateY(-5px) !important;
-  z-index: 99 !important;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35) !important;
+/* Revealed state (Phase 1: smooth staggered entrance) */
+.exp-3d-card.revealed {
+  opacity: 1 !important;
+  transform: scale(1) translateY(0) !important;
 }
 
-@keyframes expCardPopReveal {
-  0% {
-    opacity: 0;
-    transform: scale(0.2) translateY(20px);
-  }
-
-  70% {
-    opacity: 1;
-    transform: scale(1.06) translateY(-3px);
-  }
-
-  100% {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-.exp-3d-card.pop-active {
-  animation: expCardPopReveal 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards !important;
-}
-
+/* Auto-scale pulse loop state (Phase 2: gentle subtle looping scale) */
 .exp-3d-card.card-pulse-active {
-  transform: scale(1.10) translateY(-5px) !important;
+  opacity: 1 !important;
+  transform: scale(1.05) translateY(-3px) !important;
   z-index: 50 !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25) !important;
+  transition: transform 0.65s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease, box-shadow 0.4s ease !important;
+}
+
+/* User Hover state */
+.exp-3d-card:hover {
+  opacity: 1 !important;
+  transform: scale(1.08) translateY(-4px) !important;
+  z-index: 99 !important;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35) !important;
+  transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1) !important;
 }
 
 /* Move flipbook navigation arrows behind overlay when TOC is active */
@@ -3948,4 +3942,190 @@ img[alt*="MF-"]:not(.cot-btn *):not(.cot-btn) {
 /* Active model switcher button ONLY */
 .active-cot-btn {
   animation: activeCotBtnZoomLoop 1.8s ease-in-out infinite !important;
+}
+
+/* ==========================================================================
+   GLOBAL IMAGE SELECTION & POINTER EVENTS RULES
+   ========================================================================== */
+
+/* Disable text selection and dragging on all images, objects, embeds, and SVGs */
+img, object, embed, svg {
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+  -webkit-user-drag: none !important;
+}
+
+/* By default, all images have pointer-events: none */
+img {
+  pointer-events: none;
+}
+
+/* Re-enable pointer events ONLY for product image & model no svg buttons, 3D experience buttons, contact buttons, TOC links & controls */
+.cot-image,
+#cot-image,
+img.cot-image,
+img.cot-pos1,
+img.cot-pos2,
+img.cot-pos3,
+img.cot-pos4,
+img.cot-pos5,
+img.cot-pos6,
+img[src*="-image.webp"],
+img[src*="-image.png"],
+.cot-btn,
+.cot-btn img,
+.svg-container,
+.svg-container img,
+[id^="btn-"],
+[id^="btn-"] img,
+[data-src],
+[data-src] img,
+.exp-3d-card,
+.exp-3d-card img,
+.exp-3d-container a,
+a[href*="lightBox"],
+a[href*="lightBox"] img,
+.contact-link,
+.contact-link img,
+a[href^="tel:"],
+a[href^="tel:"] img,
+a[href^="mailto:"],
+a[href^="mailto:"] img,
+.toc-image-link,
+.toc-links,
+.tb-link,
+#nextPage,
+#prevPage,
+.flip-next,
+.flip-prev,
+#round-previous-button,
+#round-next-button,
+#ice-cream-round-next-btn,
+#ice-cream-round-previous-btn,
+#autoScrollBtn,
+#toggleCircle,
+.thumb-dot,
+button img,
+a img,
+.no-flip-zone,
+.no-flip-zone img {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+/* ==========================================================================
+   PRODUCT IMAGE LIGHTBOX POPUP MODAL (BLUR BACKDROP & RESPONSIVE)
+   ========================================================================== */
+.product-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.35s ease, visibility 0.35s ease;
+}
+
+.product-modal-overlay.active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.product-modal-container {
+  position: relative;
+  width: 600px;
+  height: 450px;
+  max-width: 90vw;
+  max-height: 85vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: scale(0.85);
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  background-color: #7d7d7d;
+  border-radius: 12px;
+}
+
+.product-modal-overlay.active .product-modal-container {
+  transform: scale(1);
+}
+
+.product-modal-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 12px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  background: rgba(255, 255, 255, 0.05);
+  pointer-events: auto !important;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.product-modal-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: #ffffff;
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  z-index: 1000000;
+  transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.product-modal-close:hover {
+  transform: scale(1.12);
+  background: #ef4444;
+  color: #ffffff;
+  border-color: #ef4444;
+}
+
+.product-modal-close:active {
+  transform: scale(0.95);
+}
+
+@media (max-width: 768px) {
+  .product-modal-container {
+    width: 90vw;
+    height: 60vh;
+    max-width: 95vw;
+    max-height: 80vh;
+  }
+
+  .product-modal-img {
+    width: 100%;
+    height: 100%;
+  }
+
+  .product-modal-close {
+    top: 8px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
+    font-size: 20px;
+  }
 }
