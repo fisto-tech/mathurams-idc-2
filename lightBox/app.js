@@ -91,7 +91,7 @@ function loadModel(fileOrUrl, fileName) {
   // Dynamically update product name based on loaded model
   const lowerName = name.toLowerCase();
   if (lowerName.includes('icu')) {
-    productName = 'ICU Cot';
+    productName = 'ICU Bed';
   } else if (lowerName.includes('deluxe-double-door') || lowerName.includes('deluxe_double_door') || lowerName.includes('door_attender')) {
     productName = 'Deluxe Double Door Attender Cot';
   } else if (lowerName.includes('attender_cot_deluxe') || lowerName.includes('attender-cot-deluxe')) {
@@ -2733,22 +2733,22 @@ function initNavigation() {
 
     if (modelQuery.includes('deluxe-examination-couch') || modelQuery.includes('couch') || modelQuery.includes('examination')) {
       modelPath = 'assets/models/customisation-models/deluxe-examination-couch/3d_model.glb';
-      nameToSet = 'Deluxe Examination Couch';
+      nameToSet = 'Examination Couch';
     } else if (modelQuery.includes('semi-fowler') || modelQuery.includes('semi_fowler')) {
       modelPath = 'assets/models/view-only-models/semi_fowler_cot.glb';
-      nameToSet = 'Semi Fowler Cot';
+      nameToSet = 'Semi Fowler Bed';
     } else if (modelQuery.includes('fowler-cot') || modelQuery.includes('fowler')) {
       modelPath = 'assets/models/customisation-models/fowler-cot/3d_model.glb';
-      nameToSet = 'Fowler Cot';
+      nameToSet = 'Fowler Bed';
     } else if (modelQuery.includes('hi-lo') || modelQuery.includes('hilo') || modelQuery.includes('strecher')) {
       modelPath = 'assets/models/customisation-models/hi-lo-stretcher/3d_model.glb';
       nameToSet = 'Hi-Lo Stretcher';
     } else if (modelQuery.includes('icu')) {
       modelPath = 'assets/models/customisation-models/icu-cot/3d_model.glb';
-      nameToSet = 'ICU Cot';
+      nameToSet = 'ICU Bed';
     } else if (modelQuery.includes('labor-cot') || modelQuery.includes('deluxe-double-door') || modelQuery.includes('deluxe_double_door')) {
       modelPath = 'assets/models/customisation-models/labor-cot/3d_model.glb';
-      nameToSet = 'Labor Cot';
+      nameToSet = 'Labour Bed';
     } else if (modelQuery.includes('over-bed-table-abs') || modelQuery.includes('overbed-abs') || modelQuery.includes('overbed_abs') || modelQuery.includes('over-bed-table-gear') || modelQuery.includes('overbed-gear') || modelQuery.includes('overbed_gear')) {
       modelPath = 'assets/models/view-only-models/over-bed-table/Overbed-table-ABS.glb';
       nameToSet = 'Over Bed Table ABS Type';
@@ -2757,16 +2757,16 @@ function initNavigation() {
       nameToSet = 'Over Bed Table Wood Type';
     } else if (modelQuery.includes('attender-cot-door') || modelQuery.includes('attender_cot_door') || modelQuery.includes('deluxe-double-door') || modelQuery.includes('deluxe_double_door')) {
       modelPath = 'assets/models/view-only-models/attender-cot/Deluxe_double_door_attender_cot.glb';
-      nameToSet = 'Deluxe Double Door Attender Cot';
+      nameToSet = 'Deluxe Double Door Attender Bed';
     } else if (modelQuery.includes('attender-cot-deluxe') || modelQuery.includes('attender_cot_deluxe')) {
       modelPath = 'assets/models/view-only-models/attender-cot/Attender_cot_deluxe.glb';
-      nameToSet = 'Attender Cot Deluxe';
+      nameToSet = 'Attender Bed Deluxe';
     } else if (modelQuery.includes('attender-cot') || modelQuery.includes('attender_cot') || modelQuery.includes('attender')) {
       modelPath = 'assets/models/view-only-models/attender-cot/attender_cot_plain.glb';
-      nameToSet = 'Attender Cot Plain';
+      nameToSet = 'Attender Bed Plain';
     } else if (modelQuery.includes('bedside-locker-deluxe') || modelQuery.includes('sidelocker_deluxe') || modelQuery.includes('sidelocker-deluxe')) {
       modelPath = 'assets/models/view-only-models/bedside-locker/bedside-locker-deluxe.glb';
-      nameToSet = 'Bed Sidelocker Deluxe Wood';
+      nameToSet = 'Bedside Locker Deluxe Wood';
     } else if (modelQuery.includes('bedside-locker') || modelQuery.includes('locker_plain') || modelQuery.includes('locker-plain') || modelQuery.includes('locker')) {
       modelPath = 'assets/models/view-only-models/bedside-locker/bedside-locker-plain.glb';
       nameToSet = 'Bedside Locker Plain';
